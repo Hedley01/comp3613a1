@@ -1,0 +1,130 @@
+{% extends "authenticated-base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}Degree Progress · MyAdvisor{% endblock %}
+
+{% block subpage_content %}
+<main class="progress-page container-fluid">
+  <div class="progress-heading">
+    <div>
+      <p class="portal-eyebrow">Student portal</p>
+      <h1 class="progress-title">Degree progress</h1>
+      <p class="progress-subtitle">A clear view of what you’ve completed and what’s still ahead.</p>
+    </div>
+    {% if progress %}
+    <div class="student-chip">
+      {{ icon("school", "ui-icon") }}
+      <span>{{ progress.student_name }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not progress %}
+  <section class="progress-empty card" role="status">
+    {{ icon("person_search", "empty-icon") }}
+    <div>
+      <h2 class="h5">Student profile not found</h2>
+      <p class="mb-0">There isn’t a student record linked to {{ user.email }} yet. Please contact your advisor to connect your account.</p>
+    </div>
+  </section>
+  {% else %}
+  <section class="degree-summary card" aria-labelledby="degree-title">
+    <div class="degree-summary-top">
+      <div>
+        <p class="portal-eyebrow">Your program</p>
+        <h2 id="degree-title">{{ progress.degree_title }}</h2>
+      </div>
+      <span class="degree-badge">
+        {{ icon("verified", "ui-icon") }}
+        In progress
+      </span>
+    </div>
+    <div class="credit-summary">
+      <div class="credit-total">
+        <strong>{{ progress.earned_credits }}</strong>
+        <span>of {{ progress.total_required_credits }} credits earned</span>
+      </div>
+      <div class="credit-details">
+        <span class="credits-remaining">{{ progress.remaining_credits }} credits to go</span>
+        <span class="semester-estimate">
+          <strong>
+            {% if progress.estimated_semesters_remaining == 0 %}
+            Requirements complete
+            {% elif progress.estimated_semesters_remaining == 1 %}
+            1 semester remaining
+            {% else %}
+            {{ progress.estimated_semesters_remaining }} semesters remaining
+            {% endif %}
+          </strong>
+          <small>Estimated at {{ progress.courses_per_semester }} courses × {{ progress.assumed_credits_per_course }} credits per semester</small>
+        </span>
+      </div>
+    </div>
+    <div class="progress-track" role="progressbar"
+         aria-label="Degree credits completed"
+         aria-valuenow="{{ progress.earned_credits }}"
+         aria-valuemin="0"
+         aria-valuemax="{{ progress.total_required_credits }}">
+      <div class="progress-fill" style="width: {{ progress.progress_percent }}%"></div>
+    </div>
+    <p class="progress-caption">{{ progress.progress_percent }}% of your degree requirements complete</p>
+  </section>
+
+  <div class="course-columns">
+    <section class="course-panel card" aria-labelledby="completed-title">
+      <div class="course-panel-heading">
+        <div>
+          <h2 id="completed-title">Completed courses</h2>
+        </div>
+        <span class="course-count">{{ progress.completed_courses|length }}</span>
+      </div>
+      {% if progress.completed_courses %}
+      <ul class="course-list">
+        {% for course in progress.completed_courses %}
+        <li class="course-row">
+          <span class="course-status completed" aria-label="Completed">
+            {{ icon("check", "ui-icon") }}
+          </span>
+          <div class="course-copy">
+            <strong>{{ course.title }}</strong>
+            <span>{{ course.course_code }} · {{ course.semester_taken }} · Grade {{ course.grade }}</span>
+          </div>
+          <span class="course-credits">{{ course.credits }} cr</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="course-empty">Completed courses will appear here.</p>
+      {% endif %}
+    </section>
+
+    <section class="course-panel card" aria-labelledby="remaining-title">
+      <div class="course-panel-heading">
+        <div>
+          <p class="portal-eyebrow">Next milestones</p>
+          <h2 id="remaining-title">Remaining courses</h2>
+        </div>
+        <span class="course-count">{{ progress.remaining_courses|length }}</span>
+      </div>
+      {% if progress.remaining_courses %}
+      <ul class="course-list">
+        {% for course in progress.remaining_courses %}
+        <li class="course-row">
+          <span class="course-status upcoming" aria-label="Not completed">
+            {{ icon("schedule", "ui-icon") }}
+          </span>
+          <div class="course-copy">
+            <strong>{{ course.title }}</strong>
+            <span>{{ course.course_code }}</span>
+          </div>
+          <span class="course-credits">{{ course.credits }} cr</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="course-empty">You’ve completed all listed course requirements.</p>
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

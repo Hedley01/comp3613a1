@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "icons.html" import icon %}
 
 {% block internal_css %}
 <style>
@@ -13,9 +14,15 @@
     }
 
     #sidebar {
+        position: sticky;
+        top: 0;
         min-width: 250px;
         max-width: 250px;
+        flex: 0 0 250px;
+        height: 100vh;
         min-height: 100vh;
+        align-self: flex-start;
+        overflow-y: auto;
         transition: all 0.3s;
         background: var(--brand-sidebar);
         color: #fff;
@@ -63,20 +70,22 @@
 {% block content %}
 <div id="wrapper">
     <nav id="sidebar" class="p-3 d-flex flex-column vh-100">
-        <div class="brand-wordmark">FastStarter</div>
+        <a class="brand-wordmark portal-brand" href="{{ url_for('index_view') }}">
+            {{ icon("school", "brand-icon") }}MyAdvisor
+        </a>
 
         <ul class="nav nav-pills flex-column gap-2 flex-grow-1">
             <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') }}"
-                   href="{{ url_for('user_home_view') }}">
-                    <span class="material-symbols-outlined me-2">home</span>
-                    Home
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') or request.url.path.startswith('/progress') }}"
+                   href="{{ url_for('progress_view') }}">
+                    {{ icon("school", "sidebar-icon") }}
+                    Degree progress
                 </a>
             </li>
             <li class="nav-item mt-auto">
-                <a class="nav-link d-flex align-items-center text-danger" href="{{ url_for('logout') }}">
-                    <span class="material-symbols-outlined me-2">logout</span>
-                    Logout
+                <a class="nav-link d-flex align-items-center portal-logout" href="{{ url_for('logout') }}">
+                    {{ icon("logout", "sidebar-icon") }}
+                    Sign out
                 </a>
             </li>
         </ul>
@@ -85,7 +94,7 @@
     <div id="content">
         <nav class="navbar navbar-expand-lg bg-white mb-4 px-3 rounded-3 shadow-sm">
             <button class="btn btn-outline-secondary" id="menu-toggle" type="button">
-                <span class="material-symbols-outlined md-dark">menu</span>
+                {{ icon("menu", "menu-icon") }}
             </button>
             <div class="ms-auto d-flex align-items-center gap-3">
                 <span class="fw-semibold">Welcome, {{ user.username }}</span>

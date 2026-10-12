@@ -22,6 +22,132 @@ def _ensure_models_loaded() -> None:
     import app.models  # noqa: F401
 
 
+def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
+    from sqlmodel import select
+
+    from app.models.academic import (
+        Advisor,
+        CompletedCourse,
+        Course,
+        Degree,
+        DegreeCourse,
+        Student,
+    )
+
+    if session.exec(
+        select(Student).where(Student.auth_user_id == auth_user_id)
+    ).first():
+        return False
+
+    advisor = session.exec(select(Advisor).limit(1)).first()
+    if advisor is None:
+        advisor = Advisor(
+            first_name="Alex",
+            last_name="Morgan",
+            department="Computer Science",
+        )
+        session.add(advisor)
+        session.flush()
+
+    degree = session.exec(
+        select(Degree).where(Degree.title == "BSc Computer Science")
+    ).first()
+    if degree is None:
+        degree = Degree(
+            title="BSc Computer Science",
+            total_required_credits=96,
+        )
+        session.add(degree)
+        session.flush()
+
+    topics = [
+        "Programming Fundamentals",
+        "Object-Oriented Programming",
+        "Discrete Mathematics",
+        "Computer Systems",
+        "Data Structures",
+        "Database Design",
+        "Web Application Development",
+        "Software Engineering",
+        "Algorithms",
+        "Operating Systems",
+        "Computer Networks",
+        "Human-Computer Interaction",
+        "Requirements Engineering",
+        "Programming Languages",
+        "Data Communications",
+        "Information Security",
+        "Artificial Intelligence",
+        "Systems Analysis",
+        "Computer Architecture",
+        "Applied Statistics",
+        "Cloud Computing",
+        "Mobile Application Development",
+        "Machine Learning",
+        "Information Management",
+        "Distributed Systems",
+        "User Experience Design",
+        "Software Testing",
+        "Data Visualization",
+        "Ethics in Computing",
+        "Project Management",
+        "Capstone Design I",
+        "Capstone Design II",
+    ]
+    courses: list[Course] = []
+    for index, title in enumerate(topics, start=101):
+        course_code = f"CSCI {index}"
+        course = session.get(Course, course_code)
+        if course is None:
+            course = Course(
+                course_code=course_code,
+                title=title,
+                credits=3,
+                description=f"Study of {title.lower()}.",
+            )
+            session.add(course)
+        courses.append(course)
+    session.flush()
+
+    student = Student(
+        first_name="Bob",
+        last_name="Student",
+        email=student_email,
+        auth_user_id=auth_user_id,
+        advisor_id=advisor.advisor_id,
+        degree_id=degree.degree_id,
+    )
+    session.add(student)
+    session.flush()
+
+    for course in courses:
+        requirement = session.get(
+            DegreeCourse, (degree.degree_id, course.course_code)
+        )
+        if requirement is None:
+            session.add(
+                DegreeCourse(
+                    degree_id=degree.degree_id,
+                    course_code=course.course_code,
+                )
+            )
+
+    semesters = ("Fall 2021", "Spring 2022", "Fall 2022", "Spring 2023")
+    grades = ("A", "B+", "A-", "B")
+    for index, course in enumerate(courses[:21]):
+        session.add(
+            CompletedCourse(
+                student_id=student.student_id,
+                course_code=course.course_code,
+                semester_taken=semesters[index % len(semesters)],
+                grade=grades[index % len(grades)],
+            )
+        )
+
+    session.commit()
+    return True
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     """Create database tables (drops existing by default) and seed demo users."""
     from app.config import get_settings
@@ -85,8 +211,16 @@ def cmd_seed(args: argparse.Namespace) -> None:
             )
             print(f"  create {username} ({role})")
             created += 1
+        demo_student = repo.get_by_username("bob")
+        progress_created = (
+            _seed_demo_progress(session, str(demo_student.email), demo_student.id)
+            if demo_student is not None and demo_student.id is not None
+            else False
+        )
 
     print(f"Seed done — created {created}, skipped {skipped}.")
+    if progress_created:
+        print("Created Bob's MyAdvisor degree-progress sample.")
     print("Login with bob/bobpass or admin/adminpass")
 
 

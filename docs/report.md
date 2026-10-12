@@ -28,32 +28,135 @@ again through the same validation step.
 
 ## Model diagram
 
-First draft. Update this section in Phase 5 when polish revises the model, and note what changed.
+The Phase 3 model for students, advising, degree progress, and course planning.
 
 ```mermaid
 erDiagram
-  ENTITY ||--o{ OTHER : relates
+  Student {
+    int student_id PK
+    string first_name
+    string last_name
+    string email
+    int auth_user_id FK
+  }
+  User {
+    int id PK
+    string username
+    string email
+  }
+  Advisor {
+    int advisor_id PK
+    string first_name
+    string last_name
+    string department
+  }
+  Degree {
+    int degree_id PK
+    string title
+    int total_required_credits
+  }
+  Course {
+    string course_code PK
+    string title
+    int credits
+    string description
+  }
+  CompletedCourse {
+    int completion_id PK
+    int student_id FK
+    string course_code FK
+    string semester_taken
+    string grade
+  }
+  CoursePlan {
+    int plan_id PK
+    int student_id FK
+    int advisor_id FK
+    string target_semester
+    string status
+    date submission_date
+    string advisor_feedback
+  }
+  CoursePlanCourse {
+    int plan_id PK, FK
+    string course_code PK, FK
+  }
+
+  Advisor ||--o{ Student : advises
+  User ||--o| Student : authenticates
+  Degree ||--o{ Student : pursued_by
+  Degree }o--o{ Course : requires
+  Student ||--o{ CompletedCourse : has
+  Course ||--o{ CompletedCourse : completed_as
+  Student ||--o{ CoursePlan : creates
+  Advisor ||--o{ CoursePlan : reviews
+  CoursePlan ||--o{ CoursePlanCourse : contains
+  Course ||--o{ CoursePlanCourse : selected_in
 ```
 
 ## Wireframes
 
-Embed each student-crafted wireframe here (Phase 4). Paths are relative to this file:
+### View Degree Progress
 
-```markdown
-### Explore / Search Publications
+![View Degree Progress](wireframes/view-progess.png)
 
-![Explore / Search Publications](wireframes/explore.png)
-```
+### Submit Course Plan
 
-`python manage.py report` also embeds any PNG/JPG still missing from `docs/wireframes/`.
+![Submit Course Plan](wireframes/submit-plan.png)
+
+### Review and Approve Plan
+
+![Review and Approve Plan](wireframes/review-plan.png)
+
+### Phase 4 review
+
+- The progress screen shows the degree, earned-credit total, and completed and
+  remaining course lists. The model diagram represents degree requirements,
+  course completion, and the course credits used to calculate those totals.
+- The plan screen supports selecting courses, removing selections, prerequisite
+  validation, and submission. If validation fails, block submission and show
+  unmet prerequisites inline on the editable draft so the student can correct
+  it and retry.
+- The advisor screen provides a pending-review list, course details, feedback,
+  and Approve / Request Edits actions. Show the advisor's feedback in the
+  student's returned draft so they can revise and resubmit it.
+- Ensure plan and review data identify the relevant semester and clearly show
+  the plan's review status.
 
 ## Theming
 
-Branding preferences and how they were applied (landing / login / register).
+MyAdvisor uses a professional university-portal identity: deep black-plum
+surfaces, purple accents, and Inter throughout for a clean, modern type system.
+The wordmark and student-portal messaging are consistent across the landing,
+login, and registration pages. The authenticated progress view uses the same
+purple palette and compact academic dashboard styling.
 
 ## Implementation notes
 
-One named workflow at a time. Include verify notes and polish / model revisions (Phase 5). Do not treat the first build as final.
+Phase 5 model implementation includes the ERD entities and their foreign-key
+relationships, plus join tables for degree requirements and course plans. A
+Student profile is linked one-to-one to the existing login account. The
+`python manage.py init` seed creates a Bob demo profile with a 96-credit
+Computer Science degree, 21 completed courses (63 credits), and 11 remaining
+courses.
+
+`View Degree Progress (Student)` is implemented at `/progress` (also available
+through `/app`). Its route delegates to a repository-backed service, which
+calculates earned credits and returns the completed and remaining required
+courses. The progress page displays the degree, credit total, progress bar,
+course lists, grades, and semesters; accounts without a linked student profile
+receive an explicit empty state.
+
+The UI polish pass aligns login/register fields, styles sign-out as a sidebar
+action, and uses local inline SVGs rather than relying on a remote icon font.
+The authenticated sidebar remains visible while the page scrolls, and the
+course lists use concise section headings.
+Estimated time to completion rounds remaining credits up by 15 credits per
+semester (five assumed three-credit courses); the sample account shows three
+semesters remaining.
+
+The student should complete a final visual walkthrough and report any remaining
+polish requests. Do not treat the first build as final.
 
 ## Deployed app
 
