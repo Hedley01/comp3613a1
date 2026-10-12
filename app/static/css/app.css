@@ -714,9 +714,294 @@ input:focus-visible {
   color: var(--brand-muted);
 }
 
+/* —— Student course plan —— */
+.course-plan-page {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0.25rem 0.35rem 2rem;
+}
+
+.plan-heading {
+  margin-bottom: 1.25rem;
+}
+
+.plan-term-bar {
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 18rem) 1fr;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #ebe7f1;
+  border-radius: 0.9rem;
+  background: #fff;
+}
+
+.plan-term-bar label {
+  color: var(--brand-ink);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.plan-term-bar .form-control {
+  min-height: 2.7rem;
+  border-color: #d9d4e1;
+  border-radius: 0.6rem;
+}
+
+.plan-term-bar .form-select {
+  min-height: 2.7rem;
+  border-color: #d9d4e1;
+  border-radius: 0.6rem;
+}
+
+.plan-term-help {
+  color: var(--brand-muted);
+  font-size: 0.82rem;
+}
+
+.plan-split-pane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.plan-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #ebe7f1;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(29, 21, 44, 0.045);
+}
+
+.plan-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem 0;
+}
+
+.plan-panel-heading h2 {
+  color: var(--brand-ink);
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.plan-panel-intro {
+  color: var(--brand-muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0.55rem 1.25rem 0.9rem;
+}
+
+.electives-window {
+  margin: 0 1.25rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid #e6def1;
+  border-radius: 0.8rem;
+  background: #fcfaff;
+}
+
+.electives-window-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0;
+}
+
+.electives-window-heading h3 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.electives-window .plan-panel-intro {
+  padding: 0.45rem 1rem 0.75rem;
+}
+
+.elective-course-list {
+  max-height: min(36vh, 400px);
+}
+
+.electives-window .plan-empty {
+  padding-right: 1rem;
+  padding-left: 1rem;
+}
+
+.plan-course-list {
+  list-style: none;
+  margin: 0;
+  max-height: min(62vh, 680px);
+  overflow-y: auto;
+  padding: 0 1.25rem;
+}
+
+.plan-course-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  border-top: 1px solid #f0edf3;
+  padding: 0.85rem 0;
+}
+
+.plan-course-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.plan-course-copy strong {
+  color: var(--brand-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plan-course-copy > span {
+  color: var(--brand-muted);
+  font-size: 0.78rem;
+}
+
+.plan-course-copy small {
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.prerequisite-note {
+  color: #574579;
+}
+
+.catalog-description {
+  color: var(--brand-muted);
+}
+
+.plan-action-button {
+  flex: 0 0 auto;
+  min-width: 4.8rem;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #d9d0e8;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #5124a5;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.plan-action-button:hover:not(:disabled) {
+  border-color: var(--brand-accent);
+  background: #f5f0fe;
+}
+
+.plan-action-button:disabled {
+  border-color: #e9e5ef;
+  background: #f5f3f7;
+  color: #797281;
+  cursor: default;
+}
+
+.selected-course-list {
+  max-height: min(47vh, 510px);
+}
+
+.selected-course-row {
+  align-items: flex-start;
+}
+
+.selected-course-row .remove-course-button {
+  color: #6b5264;
+}
+
+.course-validation-error,
+.course-prerequisite-warning {
+  color: #a12b38;
+  font-weight: 550;
+}
+
+.course-validation-error {
+  padding-top: 0.2rem;
+}
+
+.course-prerequisite-warning {
+  padding-top: 0.2rem;
+}
+
+.plan-feedback {
+  margin: 0 1.25rem 0.8rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid;
+  border-radius: 0.65rem;
+  font-size: 0.84rem;
+}
+
+.plan-feedback p {
+  margin: 0;
+}
+
+.plan-feedback p + p {
+  margin-top: 0.4rem;
+}
+
+.plan-feedback-info {
+  border-color: #d7c9f3;
+  background: #f7f3fe;
+  color: #5124a5;
+}
+
+.plan-feedback-error {
+  border-color: #efc3c7;
+  background: #fff3f3;
+  color: #8d202b;
+}
+
+.plan-empty {
+  color: var(--brand-muted);
+  font-size: 0.87rem;
+  margin: 0;
+  padding: 0.75rem 1.25rem 1.1rem;
+}
+
+.plan-submit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 0.9rem 1.25rem 1.15rem;
+  border-top: 1px solid #f0edf3;
+}
+
+.plan-submit-actions .btn {
+  min-height: 2.8rem;
+  border-radius: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plan-submit-actions .btn-primary {
+  border-color: var(--brand-accent);
+  background: var(--brand-accent);
+}
+
 @media (max-width: 800px) {
   .course-columns {
     grid-template-columns: 1fr;
+  }
+
+  .plan-split-pane {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-course-list {
+    max-height: 50vh;
   }
 }
 
@@ -740,5 +1025,56 @@ input:focus-visible {
 
   .course-panel {
     padding: 1rem;
+  }
+
+  .plan-term-bar {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+    padding: 0.9rem;
+  }
+
+  .plan-panel-heading {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .plan-panel-intro {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .electives-window {
+    margin-right: 1rem;
+    margin-left: 1rem;
+  }
+
+  .electives-window-heading {
+    padding-right: 0.8rem;
+    padding-left: 0.8rem;
+  }
+
+  .electives-window .plan-panel-intro {
+    padding-right: 0.8rem;
+    padding-left: 0.8rem;
+  }
+
+  .elective-course-list {
+    padding-right: 0.8rem;
+    padding-left: 0.8rem;
+  }
+
+  .plan-course-list {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .plan-feedback {
+    margin-right: 1rem;
+    margin-left: 1rem;
+  }
+
+  .plan-submit-actions {
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
 }

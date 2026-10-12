@@ -8,6 +8,18 @@ class DegreeCourse(SQLModel, table=True):
     course_code: str = Field(foreign_key="course.course_code", primary_key=True)
 
 
+class DegreeElectiveCourse(SQLModel, table=True):
+    degree_id: int = Field(foreign_key="degree.degree_id", primary_key=True)
+    course_code: str = Field(foreign_key="course.course_code", primary_key=True)
+
+
+class CoursePrerequisite(SQLModel, table=True):
+    course_code: str = Field(foreign_key="course.course_code", primary_key=True)
+    prerequisite_code: str = Field(
+        foreign_key="course.course_code", primary_key=True
+    )
+
+
 class CoursePlanCourse(SQLModel, table=True):
     plan_id: int = Field(foreign_key="courseplan.plan_id", primary_key=True)
     course_code: str = Field(foreign_key="course.course_code", primary_key=True)

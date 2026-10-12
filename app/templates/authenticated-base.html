@@ -63,6 +63,28 @@
     .navbar {
         border-bottom: 1px solid #dee2e6;
     }
+
+    @media (max-width: 800px) {
+        #sidebar {
+            position: fixed;
+            left: 0;
+            z-index: 1050;
+            margin-left: -250px;
+        }
+
+        #sidebar.collapsed {
+            margin-left: 0;
+        }
+
+        #content {
+            min-width: 0;
+        }
+
+        #menu-toggle {
+            position: relative;
+            z-index: 1060;
+        }
+    }
 </style>
 {% block additional_styles %}{% endblock %}
 {% endblock %}
@@ -80,6 +102,13 @@
                    href="{{ url_for('progress_view') }}">
                     {{ icon("school", "sidebar-icon") }}
                     Degree progress
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/course-plan') }}"
+                   href="{{ url_for('course_plan_view') }}">
+                    {{ icon("schedule", "sidebar-icon") }}
+                    Submit course plan
                 </a>
             </li>
             <li class="nav-item mt-auto">

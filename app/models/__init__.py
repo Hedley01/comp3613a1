@@ -9,8 +9,10 @@ from app.models.academic import (
     Course,
     CoursePlan,
     CoursePlanCourse,
+    CoursePrerequisite,
     Degree,
     DegreeCourse,
+    DegreeElectiveCourse,
     Student,
 )
 from app.models.user import User
@@ -21,8 +23,10 @@ __all__ = [
     "Course",
     "CoursePlan",
     "CoursePlanCourse",
+    "CoursePrerequisite",
     "Degree",
     "DegreeCourse",
+    "DegreeElectiveCourse",
     "Student",
     "User",
 ]

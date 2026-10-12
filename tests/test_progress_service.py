@@ -6,12 +6,18 @@ from app.models import (
     Advisor,
     CompletedCourse,
     Course,
+    CoursePlan,
+    CoursePlanCourse,
+    CoursePrerequisite,
     Degree,
     DegreeCourse,
+    DegreeElectiveCourse,
     Student,
     User,
 )
+from app.repositories.course_plan import CoursePlanRepository
 from app.repositories.progress import ProgressRepository
+from app.services.course_plan_service import CoursePlanService
 from app.services.progress_service import ProgressService
 
 
@@ -161,6 +167,7 @@ def test_demo_seed_provides_the_wireframed_progress_and_is_idempotent():
             ProgressRepository(session)
         ).calculate_progress_for_user_id(user.id)
         student_count = len(session.exec(select(Student)).all())
+        elective_count = len(session.exec(select(DegreeElectiveCourse)).all())
 
     assert progress is not None
     assert progress["earned_credits"] == 63
@@ -170,3 +177,135 @@ def test_demo_seed_provides_the_wireframed_progress_and_is_idempotent():
     assert len(progress["completed_courses"]) == 21
     assert len(progress["remaining_courses"]) == 11
     assert student_count == 1
+    assert elective_count == 3
+
+
+def test_course_plan_submission_stays_draft_until_prerequisites_are_completed():
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        user = User(
+            username="plan-student",
+            email="plan-student@example.com",
+            password="hashed-password",
+            role="regular_user",
+        )
+        advisor = Advisor(
+            first_name="Alex",
+            last_name="Morgan",
+            department="Computer Science",
+        )
+        degree = Degree(title="BSc Computer Science", total_required_credits=6)
+        prerequisite = Course(
+            course_code="CSCI 201",
+            title="Programming I",
+            credits=3,
+            description="Intro to programming.",
+        )
+        advanced = Course(
+            course_code="CSCI 202",
+            title="Programming II",
+            credits=3,
+            description="Advanced programming.",
+        )
+        elective = Course(
+            course_code="CSCI 203",
+            title="Approved Elective",
+            credits=3,
+            description="Faculty-approved elective.",
+        )
+        session.add_all([user, advisor, degree, prerequisite, advanced, elective])
+        session.flush()
+        student = Student(
+            first_name="Casey",
+            last_name="Student",
+            email="plan-student@example.com",
+            auth_user_id=user.id,
+            advisor_id=advisor.advisor_id,
+            degree_id=degree.degree_id,
+        )
+        session.add(student)
+        session.flush()
+        session.add_all(
+            [
+                DegreeCourse(
+                    degree_id=degree.degree_id,
+                    course_code=prerequisite.course_code,
+                ),
+                DegreeCourse(
+                    degree_id=degree.degree_id,
+                    course_code=advanced.course_code,
+                ),
+                CoursePrerequisite(
+                    course_code=advanced.course_code,
+                    prerequisite_code=prerequisite.course_code,
+                ),
+                DegreeElectiveCourse(
+                    degree_id=degree.degree_id,
+                    course_code=elective.course_code,
+                ),
+            ]
+        )
+        session.commit()
+        service = CoursePlanService(CoursePlanRepository(session))
+
+        invalid_semester = service.validate_and_save(
+            user_id=user.id,
+            target_semester="Fall 2026",
+            selected_course_codes=[advanced.course_code],
+            submit=True,
+        )
+        assert invalid_semester.has_errors
+        assert invalid_semester.plan_page is not None
+        assert invalid_semester.plan_page["target_semester"] == "Semester 1"
+
+        blocked = service.validate_and_save(
+            user_id=user.id,
+            target_semester="Semester 1",
+            selected_course_codes=[advanced.course_code],
+            submit=True,
+        )
+
+        assert blocked.has_errors
+        assert not blocked.submitted
+        assert blocked.plan_page is not None
+        assert [course["course_code"] for course in blocked.plan_page["elective_courses"]] == [
+            elective.course_code
+        ]
+        assert blocked.plan_page["selected_course_codes"] == [advanced.course_code]
+        assert "CSCI 201 (Programming I)" in blocked.plan_page["course_errors"][
+            advanced.course_code
+        ][0]
+        saved_plan = session.exec(select(CoursePlan)).one()
+        assert saved_plan.status == "draft"
+        assert saved_plan.submission_date is None
+        assert session.exec(select(CoursePlanCourse)).one().course_code == "CSCI 202"
+
+        session.add(
+            CompletedCourse(
+                student_id=student.student_id,
+                course_code=prerequisite.course_code,
+                semester_taken="Spring 2026",
+                grade="A",
+            )
+        )
+        session.commit()
+        submitted = service.validate_and_save(
+            user_id=user.id,
+            target_semester="Semester 1",
+            selected_course_codes=[advanced.course_code, elective.course_code],
+            submit=True,
+        )
+
+        assert submitted.submitted
+        updated_plan = session.exec(select(CoursePlan)).one()
+        assert updated_plan.status == "submitted"
+        assert updated_plan.submission_date is not None
+        assert {
+            item.course_code for item in session.exec(select(CoursePlanCourse)).all()
+        } == {advanced.course_code, elective.course_code}

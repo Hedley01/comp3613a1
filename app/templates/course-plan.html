@@ -1,0 +1,254 @@
+{% extends "authenticated-base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}Submit Course Plan · MyAdvisor{% endblock %}
+
+{% block subpage_content %}
+<main class="course-plan-page container-fluid">
+  <div class="plan-heading">
+    <div>
+      <p class="portal-eyebrow">Student portal</p>
+      <h1 class="progress-title">Submit course plan</h1>
+      <p class="progress-subtitle">Build a plan for your next semester and check prerequisites before submitting.</p>
+    </div>
+  </div>
+
+  {% if not plan %}
+  <section class="progress-empty card" role="alert">
+    {{ icon("person_search", "empty-icon") }}
+    <div>
+      <h2 class="h5">Student profile not found</h2>
+      <p class="mb-0">
+        {% for error in page_errors %}{{ error }}{% endfor %}
+        Link a student profile to your account before creating a course plan.
+      </p>
+    </div>
+  </section>
+  {% else %}
+  <form id="course-plan-form" method="post" action="{{ url_for('course_plan_action') }}">
+    <div class="plan-term-bar">
+      <label for="target-semester">Target semester</label>
+      <select id="target-semester" class="form-select" name="target_semester" required>
+        {% for semester in ["Semester 1", "Semester 2", "Summer Semester"] %}
+        <option value="{{ semester }}" {% if plan.target_semester == semester %}selected{% endif %}>
+          {{ semester }}
+        </option>
+        {% endfor %}
+      </select>
+      <span class="plan-term-help">Choose the semester you want this plan reviewed for.</span>
+    </div>
+
+    <div class="plan-split-pane">
+      <section class="plan-panel card" aria-labelledby="catalog-title">
+        <div class="plan-panel-heading">
+          <div>
+            <p class="portal-eyebrow">Degree requirements</p>
+            <h2 id="catalog-title">Course catalog</h2>
+          </div>
+          <span class="course-count">{{ plan.catalog_courses|length }}</span>
+        </div>
+        <p class="plan-panel-intro">Add courses from your degree requirements to the draft on the right.</p>
+
+        {% if plan.catalog_courses %}
+        <ul class="plan-course-list catalog-list">
+          {% for course in plan.catalog_courses %}
+          <li class="plan-course-row">
+            <div class="plan-course-copy">
+              <strong>{{ course.title }}</strong>
+              <span>{{ course.course_code }} <span aria-hidden="true">·</span> {{ course.credits }} credits</span>
+              {% if course.prerequisites %}
+              <small class="prerequisite-note">
+                Prerequisite{% if course.prerequisites|length > 1 %}s{% endif %}:
+                {% for prerequisite in course.prerequisites %}
+                {{ prerequisite.course_code }} — {{ prerequisite.title }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </small>
+              {% endif %}
+              {% if course.description %}
+              <small class="catalog-description">{{ course.description }}</small>
+              {% endif %}
+            </div>
+            <button class="plan-action-button add-course-button" type="button"
+                    data-add-course="{{ course.course_code }}"
+                    {% if course.course_code in plan.selected_course_codes %}disabled{% endif %}>
+              {% if course.course_code in plan.selected_course_codes %}Added{% else %}Add{% endif %}
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="plan-empty">There are no remaining courses listed for your degree.</p>
+        {% endif %}
+
+        <section class="electives-window" aria-labelledby="electives-title">
+          <div class="electives-window-heading">
+            <div>
+              <p class="portal-eyebrow">Faculty-approved options</p>
+              <h3 id="electives-title">Electives</h3>
+            </div>
+            <span class="course-count">{{ plan.elective_courses|length }}</span>
+          </div>
+          <p class="plan-panel-intro">Electives permitted for your degree program.</p>
+          {% if plan.elective_courses %}
+          <ul class="plan-course-list catalog-list elective-course-list">
+            {% for course in plan.elective_courses %}
+            <li class="plan-course-row">
+              <div class="plan-course-copy">
+                <strong>{{ course.title }}</strong>
+                <span>{{ course.course_code }} <span aria-hidden="true">·</span> {{ course.credits }} credits</span>
+                {% if course.prerequisites %}
+                <small class="prerequisite-note">
+                  Prerequisite{% if course.prerequisites|length > 1 %}s{% endif %}:
+                  {% for prerequisite in course.prerequisites %}
+                  {{ prerequisite.course_code }} — {{ prerequisite.title }}{% if not loop.last %}, {% endif %}
+                  {% endfor %}
+                </small>
+                {% endif %}
+                {% if course.description %}
+                <small class="catalog-description">{{ course.description }}</small>
+                {% endif %}
+              </div>
+              <button class="plan-action-button add-course-button" type="button"
+                      data-add-course="{{ course.course_code }}"
+                      {% if course.course_code in plan.selected_course_codes %}disabled{% endif %}>
+                {% if course.course_code in plan.selected_course_codes %}Added{% else %}Add{% endif %}
+              </button>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="plan-empty">No Faculty-approved electives are listed for your degree yet.</p>
+          {% endif %}
+        </section>
+      </section>
+
+      <section class="plan-panel card selected-plan-panel" aria-labelledby="selected-plan-title">
+        <div class="plan-panel-heading">
+          <div>
+            <p class="portal-eyebrow">Draft plan</p>
+            <h2 id="selected-plan-title">Your selected plan</h2>
+          </div>
+          <span id="selected-course-count" class="course-count">{{ plan.selected_courses|length }}</span>
+        </div>
+        <p class="plan-panel-intro">Prerequisites must be completed in an earlier semester; selecting one in this plan does not satisfy it.</p>
+
+        {% if plan.errors %}
+        <div class="plan-feedback plan-feedback-info" role="status">
+          {% for error in plan.errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        {% if page_errors %}
+        <div class="plan-feedback plan-feedback-error" role="alert" aria-live="assertive">
+          {% for error in page_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        <ul id="selected-course-list" class="plan-course-list selected-course-list"
+            aria-live="polite">
+          {% for course in plan.selected_courses %}
+          <li class="plan-course-row selected-course-row" data-selected-code="{{ course.course_code }}">
+            <input type="hidden" name="selected_course_codes" value="{{ course.course_code }}">
+            <div class="plan-course-copy">
+              <strong>{{ course.title }}</strong>
+              <span>{{ course.course_code }} <span aria-hidden="true">·</span> {{ course.credits }} credits</span>
+              {% for error in plan.course_errors.get(course.course_code, []) %}
+              <small class="course-validation-error" role="alert">{{ error }}</small>
+              {% endfor %}
+            </div>
+            <button class="plan-action-button remove-course-button" type="button"
+                    data-remove-course="{{ course.course_code }}"
+                    aria-label="Remove {{ course.course_code }} from draft">Remove</button>
+          </li>
+          {% endfor %}
+        </ul>
+        <p id="selected-plan-empty" class="plan-empty"
+           {% if plan.selected_courses %}hidden{% endif %}>
+          No courses selected yet. Add courses from the catalog to build your draft.
+        </p>
+
+        <div class="plan-submit-actions">
+          <button class="btn btn-outline-secondary" type="submit" name="action" value="save">Save draft</button>
+          <button class="btn btn-primary" type="submit" name="action" value="submit">Submit plan</button>
+        </div>
+      </section>
+    </div>
+  </form>
+  {% endif %}
+</main>
+{% endblock %}
+
+{% block subpage_scripts %}
+<script>
+  (() => {
+    const catalog = {{ (plan.catalog_courses + plan.elective_courses) | tojson if plan else "[]" }};
+    const catalogByCode = new Map(catalog.map((course) => [course.course_code, course]));
+    const selectedList = document.getElementById("selected-course-list");
+    if (!selectedList) return;
+
+    const emptyMessage = document.getElementById("selected-plan-empty");
+    const count = document.getElementById("selected-course-count");
+
+    const refreshPlan = () => {
+      const rows = [...selectedList.querySelectorAll("[data-selected-code]")];
+      const selected = new Set(rows.map((row) => row.dataset.selectedCode));
+      count.textContent = String(rows.length);
+      emptyMessage.hidden = rows.length > 0;
+      document.querySelectorAll("[data-add-course]").forEach((button) => {
+        const isSelected = selected.has(button.dataset.addCourse);
+        button.disabled = isSelected;
+        button.textContent = isSelected ? "Added" : "Add";
+      });
+    };
+
+    document.querySelectorAll("[data-add-course]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const course = catalogByCode.get(button.dataset.addCourse);
+        if (!course || selectedList.querySelector(`[data-selected-code="${CSS.escape(course.course_code)}"]`)) return;
+
+        const row = document.createElement("li");
+        row.className = "plan-course-row selected-course-row";
+        row.dataset.selectedCode = course.course_code;
+
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "selected_course_codes";
+        hidden.value = course.course_code;
+        row.append(hidden);
+
+        const copy = document.createElement("div");
+        copy.className = "plan-course-copy";
+        const title = document.createElement("strong");
+        title.textContent = course.title;
+        const metadata = document.createElement("span");
+        metadata.textContent = `${course.course_code} · ${course.credits} credits`;
+        copy.append(title, metadata);
+
+        if (course.prerequisites.length) {
+          const prerequisites = document.createElement("small");
+          prerequisites.className = "course-prerequisite-warning";
+          prerequisites.textContent = `Prerequisites to validate: ${course.prerequisites.map((item) => item.course_code).join(", ")}`;
+          copy.append(prerequisites);
+        }
+
+        const remove = document.createElement("button");
+        remove.className = "plan-action-button remove-course-button";
+        remove.type = "button";
+        remove.dataset.removeCourse = course.course_code;
+        remove.setAttribute("aria-label", `Remove ${course.course_code} from draft`);
+        remove.textContent = "Remove";
+        row.append(copy, remove);
+        selectedList.append(row);
+        refreshPlan();
+      });
+    });
+
+    selectedList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-course]");
+      if (!button) return;
+      button.closest("[data-selected-code]").remove();
+      refreshPlan();
+    });
+
+    refreshPlan();
+  })();
+</script>
+{% endblock %}

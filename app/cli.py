@@ -29,15 +29,34 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
         Advisor,
         CompletedCourse,
         Course,
+        CoursePrerequisite,
         Degree,
         DegreeCourse,
+        DegreeElectiveCourse,
         Student,
     )
 
-    if session.exec(
-        select(Student).where(Student.auth_user_id == auth_user_id)
-    ).first():
-        return False
+    prerequisites = (
+        ("CSCI 122", "CSCI 121"),
+        ("CSCI 123", "CSCI 122"),
+        ("CSCI 131", "CSCI 130"),
+        ("CSCI 132", "CSCI 131"),
+    )
+    for course_code, prerequisite_code in prerequisites:
+        if (
+            session.get(Course, course_code) is not None
+            and session.get(Course, prerequisite_code) is not None
+            and session.get(
+                CoursePrerequisite, (course_code, prerequisite_code)
+            )
+            is None
+        ):
+            session.add(
+                CoursePrerequisite(
+                    course_code=course_code,
+                    prerequisite_code=prerequisite_code,
+                )
+            )
 
     advisor = session.exec(select(Advisor).limit(1)).first()
     if advisor is None:
@@ -59,6 +78,37 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
         )
         session.add(degree)
         session.flush()
+
+    elective_courses = [
+        ("CSCI 133", "Data Science Applications"),
+        ("CSCI 134", "Cybersecurity Fundamentals"),
+        ("CSCI 135", "Mobile User Experience"),
+    ]
+    for course_code, title in elective_courses:
+        course = session.get(Course, course_code)
+        if course is None:
+            course = Course(
+                course_code=course_code,
+                title=title,
+                credits=3,
+                description=f"Study of {title.lower()}.",
+            )
+            session.add(course)
+        if session.get(
+            DegreeElectiveCourse, (degree.degree_id, course_code)
+        ) is None:
+            session.add(
+                DegreeElectiveCourse(
+                    degree_id=degree.degree_id,
+                    course_code=course_code,
+                )
+            )
+
+    if session.exec(
+        select(Student).where(Student.auth_user_id == auth_user_id)
+    ).first():
+        session.commit()
+        return False
 
     topics = [
         "Programming Fundamentals",

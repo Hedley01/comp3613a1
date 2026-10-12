@@ -61,6 +61,14 @@ erDiagram
     int credits
     string description
   }
+  DegreeElectiveCourse {
+    int degree_id PK, FK
+    string course_code PK, FK
+  }
+  CoursePrerequisite {
+    string course_code PK, FK
+    string prerequisite_code PK, FK
+  }
   CompletedCourse {
     int completion_id PK
     int student_id FK
@@ -86,6 +94,10 @@ erDiagram
   User ||--o| Student : authenticates
   Degree ||--o{ Student : pursued_by
   Degree }o--o{ Course : requires
+  Degree ||--o{ DegreeElectiveCourse : approves
+  Course ||--o{ DegreeElectiveCourse : elective_for
+  Course ||--o{ CoursePrerequisite : has_prerequisite
+  Course ||--o{ CoursePrerequisite : prerequisite_for
   Student ||--o{ CompletedCourse : has
   Course ||--o{ CompletedCourse : completed_as
   Student ||--o{ CoursePlan : creates
@@ -134,8 +146,9 @@ purple palette and compact academic dashboard styling.
 ## Implementation notes
 
 Phase 5 model implementation includes the ERD entities and their foreign-key
-relationships, plus join tables for degree requirements and course plans. A
-Student profile is linked one-to-one to the existing login account. The
+relationships, plus join tables for degree requirements, Faculty-approved degree electives,
+course prerequisites, and course plans. A Student profile is linked one-to-one
+to the existing login account. The
 `python manage.py init` seed creates a Bob demo profile with a 96-credit
 Computer Science degree, 21 completed courses (63 credits), and 11 remaining
 courses.
@@ -154,6 +167,28 @@ course lists use concise section headings.
 Estimated time to completion rounds remaining credits up by 15 credits per
 semester (five assumed three-credit courses); the sample account shows three
 semesters remaining.
+
+`Submit Course Plan (Student)` is implemented at `/course-plan`. The student
+selects Semester 1, Semester 2, or Summer Semester and courses in a responsive
+catalog/draft split pane. A separate Electives window lists the courses
+explicitly approved for the student's degree program.
+The route delegates to the course-plan service and repository; the service
+checks selected courses against the student's degree, rejects plans with
+incomplete prerequisites, and saves the invalid selection as an editable draft
+with errors shown beside the affected course. Prerequisites must be completed
+before the planned semester; selecting the prerequisite in the same plan does
+not satisfy the check. Valid submissions are stored with submitted status and
+redirect to degree progress. The demo data includes prerequisite links for the
+catalog's chained mobile-app and capstone courses.
+The demo program includes Data Science Applications, Cybersecurity
+Fundamentals, and Mobile User Experience as Faculty-approved electives.
+
+The focused service test verifies that a missing prerequisite leaves a draft
+and blocks submission, then permits that same plan to be submitted once the
+prerequisite is recorded as completed. The workflow was also exercised in the
+local browser: a CSCI 123 draft showed the inline CSCI 122 blocker, while
+submitting CSCI 122 (whose prerequisite CSCI 121 is completed) redirected to
+degree progress.
 
 The student should complete a final visual walkthrough and report any remaining
 polish requests. Do not treat the first build as final.
