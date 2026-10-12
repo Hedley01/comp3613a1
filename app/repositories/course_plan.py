@@ -21,6 +21,12 @@ class CatalogCourse:
     prerequisites: list[tuple[str, str]]
 
 
+@dataclass
+class StudentPlanHistory:
+    plan: CoursePlan
+    courses: list[tuple[str, str]]
+
+
 class CoursePlanRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -94,18 +100,77 @@ class CoursePlanRepository:
             for course in courses
         ]
 
-    def get_plan(
+    def get_committed_course_codes(self, student_id: int) -> set[str]:
+        return set(
+            self.db.exec(
+                select(CoursePlanCourse.course_code)
+                .join(
+                    CoursePlan,
+                    CoursePlan.plan_id == CoursePlanCourse.plan_id,
+                )
+                .where(
+                    CoursePlan.student_id == student_id,
+                    CoursePlan.status.in_(("submitted", "approved")),
+                )
+            ).all()
+        )
+
+    def has_active_submitted_plan(
         self, student_id: int, target_semester: str
-    ) -> tuple[CoursePlan | None, list[str]]:
+    ) -> bool:
+        return (
+            self.db.exec(
+                select(CoursePlan.plan_id)
+                .where(
+                    CoursePlan.student_id == student_id,
+                    CoursePlan.target_semester == target_semester,
+                    CoursePlan.status.in_(("submitted", "approved")),
+                )
+                .limit(1)
+            ).first()
+            is not None
+        )
+
+    def get_editable_plan(self, student_id: int) -> tuple[CoursePlan | None, list[str]]:
         plan = self.db.exec(
             select(CoursePlan)
             .where(
                 CoursePlan.student_id == student_id,
-                CoursePlan.target_semester == target_semester,
                 CoursePlan.status.in_(("draft", "revision_requested")),
             )
             .order_by(CoursePlan.plan_id.desc())
         ).first()
+        return self._get_plan_course_codes(plan)
+
+    def get_editable_plan_by_id(
+        self, student_id: int, plan_id: int
+    ) -> tuple[CoursePlan | None, list[str]]:
+        plan = self.db.exec(
+            select(CoursePlan).where(
+                CoursePlan.student_id == student_id,
+                CoursePlan.plan_id == plan_id,
+                CoursePlan.status.in_(("draft", "revision_requested", "withdrawn")),
+            )
+        ).one_or_none()
+        return self._get_plan_course_codes(plan)
+
+    def has_other_editable_plan(self, student_id: int, plan_id: int) -> bool:
+        return (
+            self.db.exec(
+                select(CoursePlan.plan_id)
+                .where(
+                    CoursePlan.student_id == student_id,
+                    CoursePlan.plan_id != plan_id,
+                    CoursePlan.status.in_(("draft", "revision_requested")),
+                )
+                .limit(1)
+            ).first()
+            is not None
+        )
+
+    def _get_plan_course_codes(
+        self, plan: CoursePlan | None
+    ) -> tuple[CoursePlan | None, list[str]]:
         if plan is None or plan.plan_id is None:
             return plan, []
 
@@ -116,6 +181,83 @@ class CoursePlanRepository:
         ).all()
         return plan, list(course_codes)
 
+    def get_withdrawable_plan(
+        self, student_id: int, plan_id: int
+    ) -> CoursePlan | None:
+        return self.db.exec(
+            select(CoursePlan).where(
+                CoursePlan.student_id == student_id,
+                CoursePlan.plan_id == plan_id,
+                CoursePlan.status.in_(("submitted", "approved")),
+            )
+        ).one_or_none()
+
+    def withdraw_plan(self, *, plan: CoursePlan) -> None:
+        plan.status = "withdrawn"
+        self.db.add(plan)
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def delete_saved_draft(self, *, student_id: int, plan_id: int) -> bool:
+        plan = self.db.exec(
+            select(CoursePlan).where(
+                CoursePlan.student_id == student_id,
+                CoursePlan.plan_id == plan_id,
+                CoursePlan.status == "draft",
+            )
+        ).one_or_none()
+        if plan is None:
+            return False
+
+        self.db.exec(
+            delete(CoursePlanCourse).where(CoursePlanCourse.plan_id == plan_id)
+        )
+        self.db.delete(plan)
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        return True
+
+    def get_plan_history(self, student_id: int) -> list[StudentPlanHistory]:
+        plans = self.db.exec(
+            select(CoursePlan)
+            .where(CoursePlan.student_id == student_id)
+            .order_by(CoursePlan.plan_id.desc())
+        ).all()
+        plan_ids = [plan.plan_id for plan in plans if plan.plan_id is not None]
+        if not plan_ids:
+            return []
+
+        course_rows = self.db.exec(
+            select(
+                CoursePlanCourse.plan_id,
+                Course.course_code,
+                Course.title,
+            )
+            .join(Course, Course.course_code == CoursePlanCourse.course_code)
+            .where(CoursePlanCourse.plan_id.in_(plan_ids))
+            .order_by(Course.course_code)
+        ).all()
+        courses_by_plan: dict[int, list[tuple[str, str]]] = {
+            plan_id: [] for plan_id in plan_ids
+        }
+        for plan_id, course_code, title in course_rows:
+            courses_by_plan[plan_id].append((course_code, title))
+
+        return [
+            StudentPlanHistory(
+                plan=plan,
+                courses=courses_by_plan[plan.plan_id],
+            )
+            for plan in plans
+            if plan.plan_id is not None
+        ]
+
     def save_plan(
         self,
         *,
@@ -123,11 +265,17 @@ class CoursePlanRepository:
         target_semester: str,
         course_codes: list[str],
         submit: bool,
+        plan_id: int | None = None,
     ) -> CoursePlan:
         if student.student_id is None:
             raise ValueError("Student profile is missing its database identifier.")
 
-        plan, _ = self.get_plan(student.student_id, target_semester)
+        if plan_id is None:
+            plan, _ = self.get_editable_plan(student.student_id)
+        else:
+            plan, _ = self.get_editable_plan_by_id(student.student_id, plan_id)
+            if plan is None:
+                raise ValueError("This plan is no longer available for editing.")
         if plan is None:
             plan = CoursePlan(
                 student_id=student.student_id,
@@ -140,6 +288,7 @@ class CoursePlanRepository:
         if plan.plan_id is None:
             raise ValueError("Course plan is missing its database identifier.")
 
+        plan.target_semester = target_semester
         self.db.exec(
             delete(CoursePlanCourse).where(
                 CoursePlanCourse.plan_id == plan.plan_id

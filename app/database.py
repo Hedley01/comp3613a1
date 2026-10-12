@@ -3,8 +3,9 @@ import threading
 import time
 from contextlib import contextmanager
 
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import DBAPIError, OperationalError, ProgrammingError
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import get_settings
 
@@ -38,6 +39,34 @@ def create_db_and_tables() -> None:
     import app.models  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
+    _add_advisor_user_link()
+
+
+def _add_advisor_user_link() -> None:
+    inspector = inspect(engine)
+    if "advisor" not in inspector.get_table_names():
+        return
+    if "user_id" in {column["name"] for column in inspector.get_columns("advisor")}:
+        return
+
+    if engine.dialect.name == "sqlite" or engine.dialect.name == "postgresql":
+        statement = (
+            'ALTER TABLE advisor ADD COLUMN user_id INTEGER '
+            'REFERENCES "user"(id)'
+        )
+    else:
+        raise RuntimeError(
+            f"Advisor login-link migration is unsupported for {engine.dialect.name}."
+        )
+
+    with engine.begin() as connection:
+        connection.execute(text(statement))
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "uq_advisor_user_id ON advisor (user_id)"
+            )
+        )
 
 
 def drop_all() -> None:
@@ -86,7 +115,7 @@ def ensure_db_and_tables(
             if attempt > 1:
                 logger.info("Database schema ready after %s attempt(s)", attempt)
             return
-        except Exception as exc:  # noqa: BLE001 — first-boot resilience
+        except Exception as exc:
             last = exc
             if not is_db_not_ready_error(exc) or attempt >= retries:
                 raise

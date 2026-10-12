@@ -49,6 +49,7 @@ erDiagram
     string first_name
     string last_name
     string department
+    int user_id FK
   }
   Degree {
     int degree_id PK
@@ -92,6 +93,7 @@ erDiagram
 
   Advisor ||--o{ Student : advises
   User ||--o| Student : authenticates
+  User ||--o| Advisor : authenticates
   Degree ||--o{ Student : pursued_by
   Degree }o--o{ Course : requires
   Degree ||--o{ DegreeElectiveCourse : approves
@@ -182,6 +184,13 @@ redirect to degree progress. The demo data includes prerequisite links for the
 catalog's chained mobile-app and capstone courses.
 The demo program includes Data Science Applications, Cybersecurity
 Fundamentals, and Mobile User Experience as Faculty-approved electives.
+Students may have up to one submitted or approved plan per target semester
+(Semester 1, Semester 2, and Summer Semester); a duplicate submission for the
+same semester is blocked with an error toast. The `Your submissions` tab lists
+drafts and plans with their statuses. Students can edit saved drafts and
+revision-requested plans, delete saved drafts from either the plan builder or
+submission history, and withdraw submitted or approved plans. A withdrawn plan
+is retained in history, can be edited, and can be resubmitted for its semester.
 
 The focused service test verifies that a missing prerequisite leaves a draft
 and blocks submission, then permits that same plan to be submitted once the
@@ -190,8 +199,22 @@ local browser: a CSCI 123 draft showed the inline CSCI 122 blocker, while
 submitting CSCI 122 (whose prerequisite CSCI 121 is completed) redirected to
 degree progress.
 
-The student should complete a final visual walkthrough and report any remaining
-polish requests. Do not treat the first build as final.
+`Review and Approve Plan (Advisor)` is implemented as an advisor-only review
+inbox at `/advisor/reviews`. Each Advisor profile is linked to a distinct
+advisor login; a plan is visible only to the advisor assigned to its student.
+The inbox shows pending submissions, student and degree details, requested
+courses, target semester, and submission date. Advisors can approve a plan or
+request revisions with required feedback. The student receives that feedback
+on the editable plan and may correct and resubmit it through the existing
+prerequisite validation workflow. The demo student-profile provisioning path
+assigns a student to the advisor with the fewest currently assigned students,
+using advisor ID as the stable tie-breaker.
+
+The degree progress page also shows a Current courses window populated from
+advisor-approved plans. Approved courses are excluded from remaining
+requirements until they are completed, and do not count as earned credits.
+The student confirmed satisfaction with the completed web app and its workflow
+polish.
 
 ## Deployed app
 
@@ -205,6 +228,8 @@ Every account a marker needs, including extra users you added. Starter accounts:
 
 - bob / bobpass — regular user
 - admin / adminpass — admin
+- advisor / advisorpass — advisor
+- advisor2 / advisorpass2 — advisor
 
 ## YouTube URL
 

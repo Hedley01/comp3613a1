@@ -30,6 +30,9 @@ class Advisor(SQLModel, table=True):
     first_name: str
     last_name: str
     department: str
+    user_id: int | None = Field(
+        default=None, foreign_key="user.id", unique=True
+    )
 
     students: list["Student"] = Relationship(back_populates="advisor")
     course_plans: list["CoursePlan"] = Relationship(back_populates="advisor")

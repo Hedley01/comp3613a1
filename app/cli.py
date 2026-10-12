@@ -22,7 +22,12 @@ def _ensure_models_loaded() -> None:
     import app.models  # noqa: F401
 
 
-def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
+def _seed_demo_progress(
+    session,
+    student_email: str,
+    auth_user_id: int,
+    advisor_user_ids: list[int],
+) -> bool:
     from sqlmodel import select
 
     from app.models.academic import (
@@ -35,6 +40,9 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
         DegreeElectiveCourse,
         Student,
     )
+    from app.models.user import User
+    from app.repositories.advisor_assignment import AdvisorAssignmentRepository
+    from app.services.advisor_assignment_service import AdvisorAssignmentService
 
     prerequisites = (
         ("CSCI 122", "CSCI 121"),
@@ -42,31 +50,33 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
         ("CSCI 131", "CSCI 130"),
         ("CSCI 132", "CSCI 131"),
     )
-    for course_code, prerequisite_code in prerequisites:
-        if (
-            session.get(Course, course_code) is not None
-            and session.get(Course, prerequisite_code) is not None
-            and session.get(
-                CoursePrerequisite, (course_code, prerequisite_code)
+    advisor_names = (("Alex", "Morgan"), ("Jordan", "Lee"))
+    for index, advisor_user_id in enumerate(advisor_user_ids):
+        advisor_user = session.get(User, advisor_user_id)
+        if advisor_user is None or advisor_user.role != "advisor":
+            continue
+        advisor = session.exec(
+            select(Advisor).where(Advisor.user_id == advisor_user_id)
+        ).first()
+        if advisor is None:
+            advisor = session.exec(
+                select(Advisor).where(Advisor.user_id.is_(None)).limit(1)
+            ).first()
+        if advisor is None:
+            first_name, last_name = advisor_names[
+                index % len(advisor_names)
+            ]
+            advisor = Advisor(
+                first_name=first_name,
+                last_name=last_name,
+                department="Computer Science",
+                user_id=advisor_user_id,
             )
-            is None
-        ):
-            session.add(
-                CoursePrerequisite(
-                    course_code=course_code,
-                    prerequisite_code=prerequisite_code,
-                )
-            )
-
-    advisor = session.exec(select(Advisor).limit(1)).first()
-    if advisor is None:
-        advisor = Advisor(
-            first_name="Alex",
-            last_name="Morgan",
-            department="Computer Science",
-        )
-        session.add(advisor)
-        session.flush()
+            session.add(advisor)
+        else:
+            advisor.user_id = advisor_user_id
+            session.add(advisor)
+    session.flush()
 
     degree = session.exec(
         select(Degree).where(Degree.title == "BSc Computer Science")
@@ -109,6 +119,10 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
     ).first():
         session.commit()
         return False
+
+    advisor = AdvisorAssignmentService(
+        AdvisorAssignmentRepository(session)
+    ).get_least_loaded_advisor()
 
     topics = [
         "Programming Fundamentals",
@@ -182,6 +196,17 @@ def _seed_demo_progress(session, student_email: str, auth_user_id: int) -> bool:
                 )
             )
 
+    for course_code, prerequisite_code in prerequisites:
+        if session.get(
+            CoursePrerequisite, (course_code, prerequisite_code)
+        ) is None:
+            session.add(
+                CoursePrerequisite(
+                    course_code=course_code,
+                    prerequisite_code=prerequisite_code,
+                )
+            )
+
     semesters = ("Fall 2021", "Spring 2022", "Fall 2022", "Spring 2023")
     grades = ("A", "B+", "A-", "B")
     for index, course in enumerate(courses[:21]):
@@ -209,7 +234,7 @@ def cmd_init(args: argparse.Namespace) -> None:
         # Drop can fail on a brand-new empty DB; create path still retries.
         try:
             drop_all()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             from app.database import is_db_not_ready_error
 
             if not is_db_not_ready_error(exc):
@@ -228,7 +253,10 @@ def cmd_seed(args: argparse.Namespace) -> None:
     bob / bobpass       (regular_user)
     admin / adminpass   (admin)
     """
+    from sqlmodel import select
+
     from app.database import ensure_db_and_tables, get_cli_session
+    from app.models.user import User, UserBase
     from app.repositories.user import UserRepository
     from app.schemas.user import AdminCreate, RegularUserCreate
     from app.utilities.security import encrypt_password
@@ -239,6 +267,8 @@ def cmd_seed(args: argparse.Namespace) -> None:
     demo_users = [
         ("bob", "bob@example.com", "bobpass", "regular_user"),
         ("admin", "admin@example.com", "adminpass", "admin"),
+        ("advisor", "advisor@example.com", "advisorpass", "advisor"),
+        ("advisor2", "advisor2@example.com", "advisorpass2", "advisor"),
     ]
 
     created = 0
@@ -250,7 +280,12 @@ def cmd_seed(args: argparse.Namespace) -> None:
                 print(f"  skip  {username} (already exists)")
                 skipped += 1
                 continue
-            payload_cls = AdminCreate if role == "admin" else RegularUserCreate
+            if role == "admin":
+                payload_cls = AdminCreate
+            elif role == "regular_user":
+                payload_cls = RegularUserCreate
+            else:
+                payload_cls = UserBase
             repo.create(
                 payload_cls(
                     username=username,
@@ -262,16 +297,31 @@ def cmd_seed(args: argparse.Namespace) -> None:
             print(f"  create {username} ({role})")
             created += 1
         demo_student = repo.get_by_username("bob")
+        demo_advisors = session.exec(
+            select(User).where(User.role == "advisor").order_by(User.id)
+        ).all()
         progress_created = (
-            _seed_demo_progress(session, str(demo_student.email), demo_student.id)
-            if demo_student is not None and demo_student.id is not None
+            _seed_demo_progress(
+                session,
+                str(demo_student.email),
+                demo_student.id,
+                [advisor.id for advisor in demo_advisors if advisor.id is not None],
+            )
+            if (
+                demo_student is not None
+                and demo_student.id is not None
+                and demo_advisors
+            )
             else False
         )
 
     print(f"Seed done — created {created}, skipped {skipped}.")
     if progress_created:
         print("Created Bob's MyAdvisor degree-progress sample.")
-    print("Login with bob/bobpass or admin/adminpass")
+    print(
+        "Login with bob/bobpass, admin/adminpass, advisor/advisorpass, "
+        "or advisor2/advisorpass2"
+    )
 
 
 def cmd_run(args: argparse.Namespace) -> None:

@@ -21,6 +21,13 @@ class RequiredCourse(TypedDict):
     credits: int
 
 
+class CurrentCourse(TypedDict):
+    course_code: str
+    title: str
+    credits: int
+    target_semester: str
+
+
 class ProgressData(TypedDict):
     student_name: str
     degree_title: str
@@ -32,6 +39,7 @@ class ProgressData(TypedDict):
     assumed_credits_per_course: int
     progress_percent: float
     completed_courses: list[CourseProgress]
+    current_courses: list[CurrentCourse]
     remaining_courses: list[RequiredCourse]
 
 
@@ -70,6 +78,15 @@ class ProgressService:
             }
             for course in records.remaining_courses
         ]
+        current_courses: list[CurrentCourse] = [
+            {
+                "course_code": course.course_code,
+                "title": course.title,
+                "credits": course.credits,
+                "target_semester": plan.target_semester,
+            }
+            for plan, course in records.current_courses
+        ]
         earned_credits = sum(course["credits"] for course in completed_courses)
         total_required_credits = records.degree.total_required_credits
         remaining_credits = max(total_required_credits - earned_credits, 0)
@@ -96,5 +113,6 @@ class ProgressService:
             "assumed_credits_per_course": ASSUMED_CREDITS_PER_COURSE,
             "progress_percent": round(progress_percent, 1),
             "completed_courses": completed_courses,
+            "current_courses": current_courses,
             "remaining_courses": remaining_courses,
         }

@@ -125,6 +125,34 @@
       {% endif %}
     </section>
   </div>
+
+  <section class="course-panel card current-courses-panel" aria-labelledby="current-title">
+    <div class="course-panel-heading">
+      <div>
+        <p class="portal-eyebrow">Advisor approved</p>
+        <h2 id="current-title">Current courses</h2>
+      </div>
+      <span class="course-count">{{ progress.current_courses|length }}</span>
+    </div>
+    {% if progress.current_courses %}
+    <ul class="course-list">
+      {% for course in progress.current_courses %}
+      <li class="course-row">
+        <span class="course-status ongoing" aria-label="Ongoing">
+          {{ icon("schedule", "ui-icon") }}
+        </span>
+        <div class="course-copy">
+          <strong>{{ course.title }}</strong>
+          <span>{{ course.course_code }} · {{ course.target_semester }}</span>
+        </div>
+        <span class="course-credits">{{ course.credits }} cr</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="course-empty">Courses approved by your advisor will appear here while they are ongoing.</p>
+    {% endif %}
+  </section>
   {% endif %}
 </main>
 {% endblock %}

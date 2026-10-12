@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 
 from app.dependencies.auth import IsUserLoggedIn, get_current_user, is_admin
 from app.dependencies.session import SessionDep
+
 from . import router, templates
 
 
@@ -17,6 +18,8 @@ async def index_view(
         user = await get_current_user(request, db)
         if await is_admin(user):
             app_home = request.url_for("admin_home_view")
+        elif user.role == "advisor":
+            app_home = request.url_for("advisor_reviews_view")
         else:
             app_home = request.url_for("user_home_view")
 

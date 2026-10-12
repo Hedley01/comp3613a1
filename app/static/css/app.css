@@ -656,6 +656,15 @@ input:focus-visible {
   color: #736b7c;
 }
 
+.course-status.ongoing {
+  background: #f0e9fc;
+  color: var(--brand-accent);
+}
+
+.current-courses-panel {
+  margin-top: 1rem;
+}
+
 .course-copy {
   display: flex;
   flex: 1;
@@ -991,12 +1000,452 @@ input:focus-visible {
   background: var(--brand-accent);
 }
 
+.student-plan-history {
+  overflow: hidden;
+  border: 1px solid #ebe7f1;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(29, 21, 44, 0.045);
+}
+
+.plan-page-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid #ded8e8;
+}
+
+.plan-page-tab {
+  position: relative;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 0.65rem 0.65rem 0 0;
+  background: transparent;
+  color: var(--brand-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plan-page-tab[aria-selected="true"] {
+  background: #f7f3fe;
+  color: var(--brand-accent);
+}
+
+.plan-page-tab[aria-selected="true"]::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--brand-accent);
+  content: "";
+}
+
+.plan-tab-panel[hidden] {
+  display: none;
+}
+
+.student-plan-history .plan-panel-heading {
+  padding: 1.2rem 1.25rem 1rem;
+}
+
+.student-plan-history .plan-panel-heading h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.plan-history-list {
+  margin: 0;
+  padding: 0 1.25rem;
+  list-style: none;
+}
+
+.plan-history-item {
+  padding: 0.9rem 0;
+  border-top: 1px solid #f0edf3;
+}
+
+.plan-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan-history-heading > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.plan-history-heading strong {
+  color: var(--brand-ink);
+}
+
+.plan-history-courses,
+.plan-history-date {
+  color: var(--brand-muted);
+  font-size: 0.78rem;
+}
+
+.plan-history-status {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #f0edf3;
+  color: var(--brand-ink);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.plan-history-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.plan-history-actions form {
+  margin: 0;
+}
+
+.plan-history-edit,
+.plan-history-withdraw,
+.plan-history-delete {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #d9d4e1;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--brand-accent);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.plan-history-edit:hover,
+.plan-history-withdraw:hover,
+.plan-history-delete:hover {
+  border-color: var(--brand-accent);
+  background: #f7f3fe;
+  color: var(--brand-accent);
+}
+
+.plan-history-withdraw {
+  border-color: #efc3c7;
+  color: #8d202b;
+}
+
+.plan-history-delete {
+  border-color: #efc3c7;
+  color: #8d202b;
+}
+
+.plan-history-withdraw:hover {
+  border-color: #d99ba1;
+  background: #fff3f3;
+  color: #8d202b;
+}
+
+.plan-history-delete:hover {
+  border-color: #d99ba1;
+  background: #fff3f3;
+  color: #8d202b;
+}
+
+.plan-status-submitted {
+  background: #f4e9d2;
+  color: #775310;
+}
+
+.plan-status-approved {
+  background: #e2f3e8;
+  color: #21623b;
+}
+
+.plan-status-revision_requested {
+  background: #fff0db;
+  color: #8a4b0f;
+}
+
+.plan-status-withdrawn {
+  background: #f1eded;
+  color: #625b5b;
+}
+
+.plan-history-feedback {
+  margin: 0.55rem 0 0;
+  color: var(--brand-muted);
+  font-size: 0.82rem;
+}
+
+/* Advisor plan review */
+.advisor-reviews-page {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0.25rem 0.35rem 2rem;
+}
+
+.advisor-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.advisor-queue-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.2rem;
+  min-height: 4.4rem;
+  border: 1px solid #e6def1;
+  border-radius: 0.85rem;
+  background: #f7f3fe;
+  color: var(--brand-accent);
+}
+
+.advisor-queue-total strong {
+  font-size: 1.4rem;
+  line-height: 1.2;
+}
+
+.advisor-queue-total span {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.advisor-review-layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 1.6fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.advisor-inbox-panel,
+.advisor-detail-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #ebe7f1;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(29, 21, 44, 0.045);
+}
+
+.advisor-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem 1rem;
+}
+
+.advisor-panel-heading h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.advisor-queue-list,
+.advisor-course-list {
+  margin: 0;
+  padding: 0 1rem;
+  list-style: none;
+}
+
+.advisor-queue-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border-top: 1px solid #f0edf3;
+  color: var(--brand-muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.advisor-queue-item:hover,
+.advisor-queue-item.active {
+  background: #f7f3fe;
+  color: var(--brand-muted);
+}
+
+.advisor-queue-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.advisor-queue-item-heading strong {
+  color: var(--brand-ink);
+  font-size: 0.9rem;
+}
+
+.review-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #f4e9d2;
+  color: #775310;
+  font-size: 0.7rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.advisor-queue-empty {
+  border-top: 1px solid #f0edf3;
+}
+
+.advisor-plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem 1.25rem;
+  padding: 0 1.25rem 1rem;
+  color: var(--brand-muted);
+  font-size: 0.8rem;
+}
+
+.advisor-plan-meta strong {
+  margin-right: 0.25rem;
+  color: var(--brand-ink);
+}
+
+.advisor-courses-section {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #f0edf3;
+}
+
+.advisor-courses-section h3 {
+  margin: 0 0 0.6rem;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.advisor-course-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid #f0edf3;
+}
+
+.advisor-course-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.advisor-course-list strong {
+  color: var(--brand-ink);
+  font-size: 0.85rem;
+}
+
+.advisor-course-list span {
+  color: var(--brand-muted);
+  font-size: 0.75rem;
+}
+
+.advisor-course-list .advisor-course-credits {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.advisor-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1rem 1.25rem 1.2rem;
+  border-top: 1px solid #f0edf3;
+}
+
+.advisor-review-form label {
+  color: var(--brand-ink);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.advisor-review-form .form-control {
+  border-color: #d9d4e1;
+  border-radius: 0.65rem;
+  resize: vertical;
+}
+
+.advisor-withdraw-form {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 1.25rem 1.2rem;
+}
+
+.advisor-withdraw-form .btn {
+  min-height: 2.5rem;
+  border-radius: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.advisor-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.3rem;
+}
+
+.advisor-review-actions .btn {
+  min-height: 2.7rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.advisor-review-actions .btn-primary {
+  border-color: var(--brand-accent);
+  background: var(--brand-accent);
+}
+
+.advisor-empty-detail {
+  display: flex;
+  min-height: 18rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--brand-muted);
+  text-align: center;
+}
+
+.advisor-empty-detail .empty-icon {
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.8rem;
+  color: var(--brand-accent);
+}
+
+.advisor-empty-detail h2 {
+  color: var(--brand-ink);
+}
+
 @media (max-width: 800px) {
   .course-columns {
     grid-template-columns: 1fr;
   }
 
   .plan-split-pane {
+    grid-template-columns: 1fr;
+  }
+
+  .advisor-review-layout {
     grid-template-columns: 1fr;
   }
 

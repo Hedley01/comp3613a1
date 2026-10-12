@@ -16,6 +16,7 @@ api_router = APIRouter(tags=["API Endpoints"], prefix="/api")
 
 from . import (
     admin_home,
+    advisor_reviews,
     course_plan,
     index,
     login,

@@ -1,11 +1,13 @@
+from fastapi import Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi import Request, status, Form
+
 from app.dependencies import SessionDep
-from . import router, templates
-from app.services.auth_service import AuthService
 from app.repositories.user import UserRepository
+from app.services.auth_service import AuthService
 from app.utilities.flash import flash
 from app.utilities.security import access_token_cookie_kwargs
+
+from . import router, templates
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -34,7 +36,12 @@ async def login_action_ajax(
         )
 
     user = user_repo.get_by_username(username)
-    dest = "admin_home_view" if user and user.role == "admin" else "user_home_view"
+    if user and user.role == "admin":
+        dest = "admin_home_view"
+    elif user and user.role == "advisor":
+        dest = "advisor_reviews_view"
+    else:
+        dest = "user_home_view"
     response = RedirectResponse(
         url=request.url_for(dest),
         status_code=status.HTTP_303_SEE_OTHER,

@@ -1,0 +1,128 @@
+{% extends "authenticated-base.html" %}
+{% from "icons.html" import icon %}
+{% block title %}Plan Reviews · MyAdvisor{% endblock %}
+
+{% block subpage_content %}
+<main class="advisor-reviews-page container-fluid">
+  <div class="advisor-page-heading">
+    <div>
+      <p class="portal-eyebrow">Advisor portal</p>
+      <h1 class="progress-title">Plan reviews</h1>
+      <p class="progress-subtitle">Review submitted course plans for your assigned students.</p>
+    </div>
+    <div class="advisor-queue-total">
+      <strong>{{ inbox.pending_plans|length }}</strong>
+      <span>pending</span>
+    </div>
+  </div>
+
+  {% if inbox.error %}
+  <section class="progress-empty card" role="alert">
+    {{ icon("person_search", "empty-icon") }}
+    <div>
+      <h2 class="h5">Advisor profile not found</h2>
+      <p class="mb-0">{{ inbox.error }} Contact an administrator to link your advisor account.</p>
+    </div>
+  </section>
+  {% else %}
+  <div class="advisor-review-layout">
+    <section class="advisor-inbox-panel card" aria-labelledby="pending-reviews-title">
+      <div class="advisor-panel-heading">
+        <div>
+          <p class="portal-eyebrow">Your queue</p>
+          <h2 id="pending-reviews-title">Pending reviews</h2>
+        </div>
+        <span class="course-count">{{ inbox.pending_plans|length }}</span>
+      </div>
+
+      {% if inbox.pending_plans %}
+      <ul class="advisor-queue-list">
+        {% for item in inbox.pending_plans %}
+        <li>
+          <a class="advisor-queue-item{% if inbox.selected_plan and inbox.selected_plan.plan.plan_id == item.plan.plan_id %} active{% endif %}"
+             href="{{ url_for('advisor_reviews_view') }}?plan_id={{ item.plan.plan_id }}">
+            <span class="advisor-queue-item-heading">
+              <strong>{{ item.student.first_name }} {{ item.student.last_name }}</strong>
+              <span class="review-status-badge">Submitted</span>
+            </span>
+            <span>{{ item.degree.title }}</span>
+            <span>{{ item.plan.target_semester }} · {{ item.courses|length }} courses</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="plan-empty advisor-queue-empty">No plans are waiting for your review.</p>
+      {% endif %}
+    </section>
+
+    <section class="advisor-detail-panel card" aria-labelledby="review-detail-title">
+      {% if inbox.selected_plan %}
+      {% set item = inbox.selected_plan %}
+      <div class="advisor-panel-heading">
+        <div>
+          <p class="portal-eyebrow">Student plan</p>
+          <h2 id="review-detail-title">{{ item.student.first_name }} {{ item.student.last_name }}</h2>
+        </div>
+        <span class="review-status-badge">Submitted</span>
+      </div>
+      <div class="advisor-plan-meta">
+        <span><strong>Student ID</strong> {{ item.student.student_id }}</span>
+        <span><strong>Degree</strong> {{ item.degree.title }}</span>
+        <span><strong>Target semester</strong> {{ item.plan.target_semester }}</span>
+        {% if item.plan.submission_date %}
+        <span><strong>Submitted</strong> {{ item.plan.submission_date.strftime("%b %d, %Y") }}</span>
+        {% endif %}
+      </div>
+
+      <div class="advisor-courses-section">
+        <h3>Requested courses</h3>
+        {% if item.courses %}
+        <ul class="advisor-course-list">
+          {% for course in item.courses %}
+          <li>
+            <div>
+              <strong>{{ course.title }}</strong>
+              <span>{{ course.course_code }}</span>
+            </div>
+            <span class="advisor-course-credits">{{ course.credits }} credits</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="plan-empty">This submitted plan has no course selections.</p>
+        {% endif %}
+      </div>
+
+      <form class="advisor-review-form" method="post"
+            action="{{ url_for('advisor_review_action', plan_id=item.plan.plan_id) }}">
+        <label for="feedback-{{ item.plan.plan_id }}">Feedback for the student</label>
+        <textarea id="feedback-{{ item.plan.plan_id }}" name="feedback" class="form-control"
+                  rows="4" maxlength="2000"
+                  placeholder="Add guidance for this student. Feedback is required when requesting revisions."></textarea>
+        <div class="advisor-review-actions">
+          <button class="btn btn-primary" type="submit" name="decision" value="approve">
+            Approve
+          </button>
+          <button class="btn btn-outline-secondary" type="submit" name="decision" value="request_revisions">
+            Request Revisions
+          </button>
+        </div>
+      </form>
+      <form class="advisor-withdraw-form" method="post"
+            action="{{ url_for('advisor_withdraw_plan', plan_id=item.plan.plan_id) }}"
+            onsubmit="return confirm('Withdraw this pending submission? It will remain in plan history.');">
+        <button class="btn btn-outline-danger" type="submit">Withdraw submission</button>
+      </form>
+      {% else %}
+      <div class="advisor-empty-detail">
+        {{ icon("school", "empty-icon") }}
+        <h2 id="review-detail-title" class="h5">All caught up</h2>
+        <p class="mb-0">Select a pending plan from your inbox to review it here.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

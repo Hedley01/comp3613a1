@@ -24,7 +24,25 @@
     </div>
   </section>
   {% else %}
+  <div class="plan-page-tabs" role="tablist" aria-label="Course plan pages">
+    <button id="plan-builder-tab" class="plan-page-tab" type="button" role="tab"
+            aria-controls="plan-builder-panel"
+            aria-selected="true">
+      Plan builder
+    </button>
+    <button id="your-submissions-tab" class="plan-page-tab" type="button" role="tab"
+            aria-controls="your-submissions-panel"
+            aria-selected="false">
+      Your submissions
+    </button>
+  </div>
+
+  <section id="plan-builder-panel" class="plan-tab-panel"
+           role="tabpanel" aria-labelledby="plan-builder-tab">
   <form id="course-plan-form" method="post" action="{{ url_for('course_plan_action') }}">
+    {% if plan.editable_plan_id %}
+    <input type="hidden" name="edit_plan_id" value="{{ plan.editable_plan_id }}">
+    {% endif %}
     <div class="plan-term-bar">
       <label for="target-semester">Target semester</label>
       <select id="target-semester" class="form-select" name="target_semester" required>
@@ -141,6 +159,12 @@
           {% for error in page_errors %}<p>{{ error }}</p>{% endfor %}
         </div>
         {% endif %}
+        {% if plan.advisor_feedback %}
+        <div class="plan-feedback plan-feedback-info" role="status">
+          <strong>Advisor feedback</strong>
+          <p>{{ plan.advisor_feedback }}</p>
+        </div>
+        {% endif %}
 
         <ul id="selected-course-list" class="plan-course-list selected-course-list"
             aria-live="polite">
@@ -167,11 +191,91 @@
 
         <div class="plan-submit-actions">
           <button class="btn btn-outline-secondary" type="submit" name="action" value="save">Save draft</button>
+          {% if plan.editable_plan_id and plan.editable_plan_status == "draft" %}
+          <button class="btn btn-outline-danger" type="submit"
+                  formmethod="post"
+                  formaction="{{ url_for('course_plan_delete_draft', plan_id=plan.editable_plan_id) }}"
+                  formnovalidate
+                  onclick="return confirm('Delete this saved draft? This cannot be undone.');">
+            Delete draft
+          </button>
+          {% endif %}
           <button class="btn btn-primary" type="submit" name="action" value="submit">Submit plan</button>
         </div>
       </section>
     </div>
   </form>
+  </section>
+
+  <section id="your-submissions-panel"
+           class="student-plan-history card plan-tab-panel"
+           aria-labelledby="plan-history-title" role="tabpanel" hidden>
+    <div class="plan-panel-heading">
+      <div>
+        <p class="portal-eyebrow">Your submissions</p>
+        <h2 id="plan-history-title">Plan history</h2>
+      </div>
+      <span class="course-count">{{ plan.plan_history|length }}</span>
+    </div>
+    {% if plan.plan_history %}
+    <ul class="plan-history-list">
+      {% for item in plan.plan_history %}
+      <li class="plan-history-item">
+        <div class="plan-history-heading">
+          <div>
+            <strong>{{ item.target_semester }}</strong>
+            <span class="plan-history-courses">
+              {% if item.courses %}
+              {% for course in item.courses %}
+              {{ course.course_code }}{% if not loop.last %}, {% endif %}
+              {% endfor %}
+              {% else %}
+              No courses selected
+              {% endif %}
+            </span>
+          </div>
+          <div class="plan-history-actions">
+            <span class="plan-history-status plan-status-{{ item.status }}">
+              {{ item.status|replace("_", " ")|title }}
+            </span>
+            {% if item.status in ["draft", "revision_requested", "withdrawn"] %}
+            <a class="plan-history-edit"
+               href="{{ url_for('course_plan_view') }}?edit_plan_id={{ item.plan_id }}">
+              Edit plan
+            </a>
+            {% endif %}
+            {% if item.status == "draft" %}
+            <form method="post"
+                  action="{{ url_for('course_plan_delete_draft', plan_id=item.plan_id) }}"
+                  onsubmit="return confirm('Delete this saved draft? This cannot be undone.');">
+              <button class="plan-history-delete" type="submit">Delete draft</button>
+            </form>
+            {% elif item.status in ["submitted", "approved"] %}
+            <form method="post"
+                  action="{{ url_for('course_plan_withdraw', plan_id=item.plan_id) }}"
+                  onsubmit="return confirm('Withdraw this plan? It will become editable and can be resubmitted.');">
+              <button class="plan-history-withdraw" type="submit">
+                {% if item.status == "approved" %}Withdraw to edit{% else %}Withdraw{% endif %}
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% if item.submission_date %}
+        <small class="plan-history-date">
+          Submitted {{ item.submission_date.strftime("%b %d, %Y") }}
+        </small>
+        {% endif %}
+        {% if item.advisor_feedback and item.status == "revision_requested" %}
+        <p class="plan-history-feedback"><strong>Advisor feedback:</strong> {{ item.advisor_feedback }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="plan-empty">Your course plans and their review statuses will appear here.</p>
+    {% endif %}
+  </section>
   {% endif %}
 </main>
 {% endblock %}
@@ -179,6 +283,17 @@
 {% block subpage_scripts %}
 <script>
   (() => {
+    const tabs = [...document.querySelectorAll('[role="tab"][aria-controls]')];
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.setAttribute("aria-selected", String(selected));
+          document.getElementById(item.getAttribute("aria-controls")).hidden = !selected;
+        });
+      });
+    });
+
     const catalog = {{ (plan.catalog_courses + plan.elective_courses) | tojson if plan else "[]" }};
     const catalogByCode = new Map(catalog.map((course) => [course.course_code, course]));
     const selectedList = document.getElementById("selected-course-list");

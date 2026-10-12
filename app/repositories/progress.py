@@ -5,6 +5,8 @@ from sqlmodel import Session, select
 from app.models.academic import (
     CompletedCourse,
     Course,
+    CoursePlan,
+    CoursePlanCourse,
     Degree,
     DegreeCourse,
     Student,
@@ -16,6 +18,7 @@ class StudentProgressRecords:
     student: Student
     degree: Degree
     completed_courses: list[tuple[Course, CompletedCourse]]
+    current_courses: list[tuple[CoursePlan, Course]]
     remaining_courses: list[Course]
 
 
@@ -50,6 +53,20 @@ class ProgressRepository:
             .order_by(Course.course_code)
         ).all()
         completed_codes = {course.course_code for course, _ in completed_rows}
+        current_course_rows = self.db.exec(
+            select(CoursePlan, Course)
+            .join(
+                CoursePlanCourse,
+                CoursePlanCourse.plan_id == CoursePlan.plan_id,
+            )
+            .join(Course, Course.course_code == CoursePlanCourse.course_code)
+            .where(
+                CoursePlan.student_id == student_id,
+                CoursePlan.status == "approved",
+            )
+            .order_by(CoursePlan.target_semester, Course.course_code)
+        ).all()
+        current_codes = {course.course_code for _, course in current_course_rows}
 
         remaining_courses = self.db.exec(
             select(Course)
@@ -57,6 +74,7 @@ class ProgressRepository:
             .where(
                 DegreeCourse.degree_id == student.degree_id,
                 Course.course_code.not_in(completed_codes),
+                Course.course_code.not_in(current_codes),
             )
             .order_by(Course.course_code)
         ).all()
@@ -65,5 +83,6 @@ class ProgressRepository:
             student=student,
             degree=degree,
             completed_courses=completed_rows,
+            current_courses=current_course_rows,
             remaining_courses=remaining_courses,
         )
