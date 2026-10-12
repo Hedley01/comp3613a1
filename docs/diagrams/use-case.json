@@ -1,0 +1,48 @@
+{
+  "system": "MyAdvisor",
+  "actors": [
+    {
+      "name": "Student",
+      "side": "left"
+    },
+    {
+      "name": "Advisor",
+      "side": "right"
+    }
+  ],
+  "use_cases": [
+    {
+      "name": "View Degree Progress",
+      "actors": ["Student"]
+    },
+    {
+      "name": "Submit Course Plan",
+      "actors": ["Student"],
+      "includes": ["Validate Course Plan"]
+    },
+    {
+      "name": "Validate Course Plan",
+      "actors": []
+    },
+    {
+      "name": "View Course Plan",
+      "actors": ["Student", "Advisor"]
+    },
+    {
+      "name": "Review and Approve Plan",
+      "actors": ["Advisor"],
+      "includes": ["View Course Plan"]
+    },
+    {
+      "name": "Request Revisions",
+      "actors": ["Advisor"],
+      "extends": ["Review and Approve Plan"]
+    },
+    {
+      "name": "Revise Course Plan",
+      "actors": ["Student"],
+      "includes": ["Submit Course Plan"],
+      "extends": ["View Course Plan"]
+    }
+  ]
+}

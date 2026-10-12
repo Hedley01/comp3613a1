@@ -6,17 +6,25 @@ Do not put your student ID in this file if you will commit it. The PDF cover add
 
 ## Assigned project
 
+MyAdvisor
+
 ## Three workflows
 
-### 1.
+### 1. View Degree Progress (Student)
 
-### 2.
+### 2. Submit Course Plan (Student)
 
-### 3.
+### 3. Review and Approve Plan (Advisor)
 
 ## Use case diagram
 
 ![Use case diagram](diagrams/use-case.png)
+
+`Submit Course Plan` includes plan validation; an invalid plan must be corrected
+before submission. Student and Advisor share `View Course Plan`. `Review and
+Approve Plan` includes viewing the plan, and may extend to `Request Revisions`.
+When revisions are requested, the Student can revise the plan and submit it
+again through the same validation step.
 
 ## Model diagram
 
