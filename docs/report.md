@@ -237,6 +237,8 @@ Every account a marker needs, including extra users you added. Starter accounts:
 - advisor2 / advisorpass2 — advisor
 
 ## YouTube URL
+  
+https://youtu.be/XchxlasFRfo  
 
 ## Session transcripts
 
