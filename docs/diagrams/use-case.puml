@@ -1,0 +1,41 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam shadowing false
+skinparam actorBorderColor #1B365D
+skinparam actorFontColor #1E232D
+skinparam usecaseBackgroundColor #FFFFFF
+skinparam usecaseBorderColor #1B365D
+skinparam usecaseFontColor #1E232D
+skinparam rectangleBorderColor #1B365D
+skinparam rectangleBackgroundColor #F8FAFC
+skinparam arrowColor #1B365D
+
+actor "Student" as Student
+
+rectangle "MyAdvisor" {
+  usecase "View Degree Progress" as View_Degree_Progress
+  usecase "Submit Course Plan" as Submit_Course_Plan
+  usecase "Validate Course Plan" as Validate_Course_Plan
+  usecase "View Course Plan" as View_Course_Plan
+  usecase "Review and Approve Plan" as Review_and_Approve_Plan
+  usecase "Request Revisions" as Request_Revisions
+  usecase "Revise Course Plan" as Revise_Course_Plan
+}
+
+actor "Advisor" as Advisor
+
+Student --> View_Degree_Progress
+Student --> Submit_Course_Plan
+Submit_Course_Plan ..> Validate_Course_Plan : <<include>>
+Student --> View_Course_Plan
+View_Course_Plan <-- Advisor
+Review_and_Approve_Plan <-- Advisor
+Review_and_Approve_Plan ..> View_Course_Plan : <<include>>
+Request_Revisions <-- Advisor
+Request_Revisions ..> Review_and_Approve_Plan : <<extend>>
+Student --> Revise_Course_Plan
+Revise_Course_Plan ..> Submit_Course_Plan : <<include>>
+Revise_Course_Plan ..> View_Course_Plan : <<extend>>
+
+@enduml
