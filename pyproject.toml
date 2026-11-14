@@ -16,6 +16,12 @@ dependencies = []
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "unit: isolated tests of one module using fake collaborators (no database, no web app)",
+    "integration: tests that use a real (in-memory) database and/or the running web app",
+]
 
 [tool.setuptools]
 packages = ["app"]
